@@ -1,0 +1,11 @@
+<b>Mid Summary Reports - ALL TIME</b>
+
+{% for mid in mids -%}
+<b>Title:</b> {{ mid.title }}
+<b>Approved:</b> {{ mid.approved }}
+<b>Approved amount:</b> ${{ mid.approvedAmount }}
+<b>Declined:</b> {{ mid.declined }}
+<b>Refunded:</b> {{ mid.refunded }}
+<b>Refunded amount:</b> ${{ mid.refundedAmount }}
+
+{% endfor %}

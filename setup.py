@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from flask import Flask, request
 from services.order_service import OrderService
 from services.customer_service import CustomerService
+from services.reports_service import ReportsService
 
 
 load_dotenv()
@@ -25,6 +26,8 @@ order_service = OrderService()
 
 history_steps = {}
 customer_service = CustomerService()
+
+reports_service = ReportsService()
 
 commands = {
     'start': 'Start using this bot',
@@ -127,6 +130,25 @@ def history_information_command_handler(message):
             customer_id=customer_id, history=history), parse_mode='HTML')
 
 
+# summaryreport command handler
+@bot.message_handler(commands=['summaryreport'])
+@send_action('typing')
+def summaryreport_command_handler(message):
+    chat_id = message.chat.id
+
+    try:
+        mids = reports_service.get_mid_summary_report()
+    except ValueError as e:
+        order_steps[chat_id] = 0
+        return bot.send_message(chat_id, f'❌ {e}')
+
+    with codecs.open('templates/summary_report.html', 'r', encoding='UTF-8') as file:
+        template = Template(file.read())
+
+        bot.send_message(chat_id, template.render(
+            mids=mids), parse_mode='HTML')
+
+
 # help command handler
 @bot.message_handler(commands=['help'])
 @send_action('typing')
@@ -168,10 +190,11 @@ def webhook():
 
 
 # application entry point
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(
-        os.environ.get('PORT', 8585)),  debug=True)
-
-
 # if __name__ == '__main__':
-#     bot.polling(none_stop=True, interval=0)
+#     app.run(host='0.0.0.0', port=int(
+#         os.environ.get('PORT', 8585)),  debug=True)
+
+
+if __name__ == '__main__':
+    bot.remove_webhook()
+    bot.polling(none_stop=True, interval=0)
