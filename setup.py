@@ -31,8 +31,9 @@ reports_service = ReportsService()
 
 commands = {
     'start': 'Start using this bot',
-    'order': 'Please, write an Order Id',
-    'history': 'Please, write an Customer Id',
+    'order': 'The Order Command returns information about existing orders.',
+    'history': 'The Customer History Command returns a customer\'s about existing Customers.',
+    'summaryreport': 'The Mid Summary Report Command returns summary report of mid information.',
     'help': 'Useful information about this bot',
     'contacts': 'Developer contacts',
 }
