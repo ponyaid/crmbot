@@ -8,6 +8,7 @@ from jinja2 import Template
 from dotenv import load_dotenv
 from flask import Flask, request
 from services.order_service import OrderService
+from services.customer_service import CustomerService
 
 
 load_dotenv()
@@ -19,21 +20,25 @@ SERVER_URL = os.getenv('SERVER_URL')
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
-user_steps = {}
+order_steps = {}
 order_service = OrderService()
+
+history_steps = {}
+customer_service = CustomerService()
 
 commands = {
     'start': 'Start using this bot',
     'order': 'Please, write an Order Id',
+    'history': 'Please, write an Customer Id',
     'help': 'Useful information about this bot',
     'contacts': 'Developer contacts',
 }
 
 
-def get_user_step(uid):
-    if uid not in user_steps:
-        user_steps[uid] = 0
-    return user_steps[uid]
+def get_user_step(uid, obj):
+    if uid not in obj:
+        obj[uid] = 0
+    return obj[uid]
 
 
 # decorator for bot actions
@@ -63,29 +68,63 @@ def start_command_handler(message):
 @send_action('typing')
 def order_command_handler(message):
     chat_id = message.chat.id
-    user_steps[chat_id] = 1
-    bot.send_message(chat_id, '{0}, write ID of order please'.format(
-        message.chat.username))
+    order_steps[chat_id] = 1
+    bot.send_message(chat_id, 'Write ID of order please')
 
 
 # order information command handler
-@bot.message_handler(func=lambda message: get_user_step(message.chat.id) == 1)
+@bot.message_handler(func=lambda message: get_user_step(message.chat.id, order_steps) == 1)
 @send_action('typing')
 def order_information_command_handler(message):
     chat_id = message.chat.id
     order_id = message.text.strip()
 
     try:
-        order = order_service.get_order_information(order_id)
-    except Exception as e:
-        raise e
+        json = order_service.get_order_information(order_id)
+    except ValueError as e:
+        order_steps[chat_id] = 0
+        return bot.send_message(chat_id, f'❌ {e}')
 
-    user_steps[chat_id] = 0
+    order_steps[chat_id] = 0
+    items = [v for v in json['items'].values()]
+    fulfillments = [f for f in json['fulfillments']]
+
     with codecs.open('templates/order.html', 'r', encoding='UTF-8') as file:
         template = Template(file.read())
-        print(order.items)
+
         bot.send_message(chat_id, template.render(
-            order=order), parse_mode='HTML')
+            order=json, items=items, fulfillments=fulfillments), parse_mode='HTML')
+
+
+# history command handler
+@bot.message_handler(commands=['history'])
+@send_action('typing')
+def history_command_handler(message):
+    chat_id = message.chat.id
+    history_steps[chat_id] = 1
+    bot.send_message(chat_id, 'Write ID of customer please')
+
+
+# history information command handler
+@bot.message_handler(func=lambda message: get_user_step(message.chat.id, history_steps) == 1)
+@send_action('typing')
+def history_information_command_handler(message):
+    chat_id = message.chat.id
+    customer_id = message.text.strip()
+
+    try:
+        history = customer_service.get_customer_history(customer_id)
+    except ValueError as e:
+        order_steps[chat_id] = 0
+        return bot.send_message(chat_id, f'❌ {e}')
+
+    history_steps[chat_id] = 0
+
+    with codecs.open('templates/history.html', 'r', encoding='UTF-8') as file:
+        template = Template(file.read())
+
+        bot.send_message(chat_id, template.render(
+            customer_id=customer_id, history=history), parse_mode='HTML')
 
 
 # help command handler
@@ -109,18 +148,7 @@ def contacts_command_handler(message):
     with codecs.open('templates/contacts.html', 'r', encoding='UTF-8') as file:
         template = Template(file.read())
         bot.send_message(chat_id, template.render(
-            user_name=message.chat.username), parse_mode='HTML')
-
-
-# contacts command handler
-@bot.message_handler(commands=['contacts'])
-@send_action('typing')
-def contacts_command_handler(message):
-    cid = message.chat.id
-    with codecs.open('templates/contacts.html', 'r', encoding='UTF-8') as file:
-        template = Template(file.read())
-        bot.send_message(cid, template.render(
-            user_name=message.chat.username), parse_mode='HTML')
+            username=message.chat.username), parse_mode='HTML')
 
 
 # set web hook
@@ -140,10 +168,10 @@ def webhook():
 
 
 # application entry point
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(
-        os.environ.get('PORT', 8585)),  debug=True)
-
-
 # if __name__ == '__main__':
-#     bot.polling(none_stop=True, interval=0)
+#     app.run(host='0.0.0.0', port=int(
+#         os.environ.get('PORT', 8585)),  debug=True)
+
+
+if __name__ == '__main__':
+    bot.polling(none_stop=True, interval=0)

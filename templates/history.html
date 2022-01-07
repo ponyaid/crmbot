@@ -1,0 +1,9 @@
+<b>Customer Id:</b> <a
+    href="{{'https://crm.konnektive.com/customer/cs/details/?customerId=%s'%customer_id }}"><u>{{customer_id}}</u></a>
+
+{% for item in history -%}
+<b>Message:</b> {{ item.message }}
+<b>Date created:</b> {{ item.dateCreated }}
+<b>Agent name:</b> {{ item.agentName }}
+
+{% endfor %}

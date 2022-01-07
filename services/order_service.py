@@ -18,5 +18,10 @@ class OrderService:
                    'password': os.getenv('KONNEKTIVE_PASS')
                    }
         result = requests.post(url, params=payload)
-        order = result.json()['message']['data'][0]
+        data = result.json()
+
+        if data['result'] == 'ERROR':
+            raise ValueError(data['message'])
+
+        order = data['message']['data'][0]
         return order

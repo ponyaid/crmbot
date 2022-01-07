@@ -1,14 +1,22 @@
-<b><u>{{ order.orderId }}</u></b>
+<b>Order Id:</b> <u>{{ order.orderId }}</u>
 
-<b>Date created: </b>{{ order.dateCreated }}
-<b>Order status: </b>{{ order.orderStatus }}
-<b>Total amount: </b>{{ order.totalAmount }}
-<b>Campaign name: </b>{{ order.campaignName }}
+<b>Date created:</b> {{ order.dateCreated }}
+<b>Order status:</b> {{ order.orderStatus }}
+<b>Total amount:</b> ${{ order.totalAmount }}
+<b>Campaign name:</b> {{ order.campaignName }}
 
-<b>🙎‍♂️ CUSTOMER</b>
+<b>Customer Id:</b> <a href="{{'https://crm.konnektive.com/customer/cs/details/?customerId=%s'%order.customerId }}">{{
+    order.customerId }}</a>
+<b>Name:</b> {{ order.name }}
+<b>Email address:</b> {{ order.emailAddress }}
 
-<b>Customer Id: </b>{{ order.customerId }}
-<b>Name: </b>{{ order.name }}
-<b>Email address: </b>{{ order.emailAddress }}
-
-<b>🛒 ITEMS</b>
+<b>🛒 Order items</b>
+{% for item in items -%}
+&#183; {{ item.name }} x {{ item.qty }} - ${{ item.price }}
+{% endfor %}
+<b>🚚 Fulfillments</b>
+{% for fulfillment in fulfillments -%}
+&#183; {{ fulfillment.fulfillmentId }} - {{ fulfillment.status }}
+Tracking number - {{ fulfillment.trackingNumber }}
+Date created - {{ fulfillment.dateCreated }}
+{% endfor %}
